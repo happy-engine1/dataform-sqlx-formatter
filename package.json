@@ -1,0 +1,97 @@
+{
+  "name": "dataform-sqlx-formatter",
+  "displayName": "Dataform SQLX Formatter",
+  "description": "Format a single .sqlx file with the Dataform CLI's own formatter, producing exactly the same output as `dataform format`.",
+  "version": "0.1.0",
+  "publisher": "happy-engine1",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/happy-engine1/dataform-sqlx-formatter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/happy-engine1/dataform-sqlx-formatter/issues"
+  },
+  "homepage": "https://github.com/happy-engine1/dataform-sqlx-formatter#readme",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "extensionKind": [
+    "workspace"
+  ],
+  "categories": [
+    "Formatters"
+  ],
+  "keywords": [
+    "dataform",
+    "sqlx",
+    "bigquery",
+    "formatter",
+    "sql"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:sqlx"
+  ],
+  "files": [
+    "out/*.js",
+    "preload-keyword-case.js",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "sqlx",
+        "aliases": [
+          "SQLX",
+          "sqlx"
+        ],
+        "extensions": [
+          ".sqlx"
+        ]
+      }
+    ],
+    "configurationDefaults": {
+      "[sqlx]": {
+        "editor.defaultFormatter": "happy-engine1.dataform-sqlx-formatter"
+      }
+    },
+    "configuration": {
+      "title": "Dataform SQLX Formatter",
+      "properties": {
+        "dataformSqlxFormatter.dataformPath": {
+          "type": "string",
+          "default": "dataform",
+          "description": "Path to the Dataform CLI executable. Set an absolute path if `dataform` is not on PATH."
+        },
+        "dataformSqlxFormatter.timeoutMs": {
+          "type": "number",
+          "default": 30000,
+          "description": "Timeout for `dataform format` in milliseconds."
+        },
+        "dataformSqlxFormatter.keywordCase": {
+          "type": "string",
+          "enum": [
+            "preserve",
+            "upper",
+            "lower"
+          ],
+          "default": "preserve",
+          "description": "Case of SQL keywords. `preserve` matches Dataform CLI 2.x. Only effective with CLI 2.x (CLI 3.x always uppercases)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "package": "npm run compile && vsce package",
+    "publish": "npm run compile && vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "~1.90.0",
+    "@vscode/vsce": "^3.0.0",
+    "typescript": "^5.4.0"
+  }
+}
