@@ -35,9 +35,9 @@ export async function formatSqlx(text: string, options: FormatOptions): Promise<
     }
     // The CLI writes snowflake.log to its cwd, so run it inside the temp dir to clean that up too.
     const output = await run(options.dataformPath, ["format", tmp], tmp, env, options.timeoutMs);
-    // CLI 2.x exits 0 even when formatting fails, so check the output instead.
+    // CLI 2.x exits 0 even when formatting fails (3.x exits 1), so check the output instead.
     if (!output.includes("Successfully formatted")) {
-      throw new FormatError(`dataform format failed:\n${stripAnsi(output)}`);
+      throw new FormatError(`dataform format failed: ${failureReason(output)}`);
     }
 
     const formatted = await fs.readFile(target, "utf8");
@@ -65,13 +65,23 @@ function assertSafe(original: string, formatted: string): void {
 function run(file: string, args: string[], cwd: string, env: NodeJS.ProcessEnv, timeoutMs: number): Promise<string> {
   return new Promise((resolve, reject) => {
     execFile(file, args, { cwd, env, timeout: timeoutMs }, (err, stdout, stderr) => {
-      if (err) {
-        reject(new FormatError(`Could not run ${file}: ${err.message}\n${stderr}`));
+      // A numeric exit code means the CLI ran and reported a failure; let the caller read its output.
+      // Anything else (not found, killed by the timeout) means it did not run to completion.
+      if (err && (typeof err.code !== "number" || err.killed)) {
+        const reason = err.killed ? `timed out after ${timeoutMs}ms` : err.message;
+        reject(new FormatError(`Could not run ${file}: ${reason}\n${stderr}`));
         return;
       }
       resolve(stdout + stderr);
     });
   });
+}
+
+// Both CLI versions print "  definitions/target.sqlx: <reason>" for each file that failed.
+function failureReason(output: string): string {
+  const text = stripAnsi(output);
+  const match = text.match(/target\.sqlx:\s*(.+)/);
+  return match ? match[1].trim() : text.trim();
 }
 
 function stripAnsi(s: string): string {

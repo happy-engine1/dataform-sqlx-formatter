@@ -2,7 +2,7 @@
   "name": "dataform-sqlx-formatter",
   "displayName": "Dataform SQLX Formatter",
   "description": "Format a single .sqlx file with the Dataform CLI's own formatter, producing exactly the same output as `dataform format`.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "happy-engine1",
   "license": "MIT",
   "repository": {
