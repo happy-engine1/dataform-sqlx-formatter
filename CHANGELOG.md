@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- README: screenshots, getting started, and FAQ.
+
 ## 0.1.1
 
 - Show the actual reason when formatting fails with Dataform CLI 3.x, instead of "Could not run" (3.x exits 1 on failure, 2.x exits 0).

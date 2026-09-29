@@ -1,36 +1,81 @@
 # Dataform SQLX Formatter
 
-Format the `.sqlx` file you are editing with the **Dataform CLI's own formatter**. The output is exactly what `dataform format` produces, but only the current file is touched.
+**Format the `.sqlx` file you're editing — with exactly the same result as `dataform format`.**
 
-## Why
+Press `Shift+Alt+F` (`Shift+Option+F` on macOS) and only the current file is formatted, by the Dataform CLI's own formatter. No more running `dataform format` over the whole project, and no more fights with your pre-commit hook or CI.
 
-`dataform format` (CLI 2.x) always formats every file in the project, so you cannot run it on the file you are working on. This extension copies the file into a throwaway project in a temp directory, runs the CLI there, and applies the result as a normal editor edit.
+| Before | After |
+|---|---|
+| ![Before formatting](images/before.png) | ![After formatting](images/after.png) |
 
-- Same output as `dataform format`, so it never fights a `dataform format` pre-commit hook or CI check
-- Works with **Format Document** (`Shift+Alt+F` / `Shift+Option+F`), **Format on Save**, and undo
-- Works in Dev Containers and Remote SSH (runs where the Dataform CLI is installed)
+## Why this extension?
 
-## Requirements
+`dataform format` is the formatter your team already agreed on, but it only works on the **entire project**:
 
-The [Dataform CLI](https://cloud.google.com/dataform/docs/use-dataform-cli) must be installed (`npm i -g @dataform/cli`). Tested with 2.9.0 and 3.0.71.
+- You can't format just the file you're working on.
+- Running it touches every unformatted file in the repo, so your PR fills up with unrelated diffs.
+- Other SQL formatters in VS Code produce *different* output, so the `dataform format` pre-commit hook or CI check rewrites your file again.
+
+This extension copies the current file into a throwaway project, lets the Dataform CLI format it there, and applies the result as a normal editor edit. The output is byte-for-byte what `dataform format` would produce.
+
+Verified on a real-world project with 332 `.sqlx` files: every file formatted on its own matched `dataform format` on the whole project, with both CLI 2.9.0 and 3.0.71.
+
+## Features
+
+- **Same output as `dataform format`** — uses the CLI you already have installed, not a re-implementation.
+- **One file at a time** — nothing outside the current editor is touched.
+- **Works like any VS Code formatter** — Format Document, Format on Save, and a single `Cmd+Z` / `Ctrl+Z` to undo.
+- **Uppercase keywords with CLI 2.x** — optional `keywordCase` setting. The result is stable under a stock `dataform format`, so it never fights your hook.
+- **Won't corrupt broken files** — if a file has a syntax error, formatting is skipped instead of mangling your `${...}` expressions.
+- **Dev Containers and remote workspaces** — runs on the machine where the Dataform CLI is installed.
+
+## Getting started
+
+1. Install the Dataform CLI if you haven't already:
+   ```bash
+   npm i -g @dataform/cli
+   ```
+2. Install this extension.
+3. Open a `.sqlx` file and run **Format Document** (`Shift+Alt+F` / `Shift+Option+F`).
+
+That's it. `.sqlx` files use this extension as their default formatter automatically.
+
+To format on every save, add this to your settings:
+
+```json
+"[sqlx]": {
+  "editor.formatOnSave": true
+}
+```
 
 ## Settings
 
+![Settings](images/settings.png)
+
 | Setting | Default | Description |
 |---|---|---|
-| `dataformSqlxFormatter.dataformPath` | `dataform` | Path to the CLI. Set an absolute path if it is not on `PATH`. |
-| `dataformSqlxFormatter.timeoutMs` | `30000` | Timeout for one format run. |
-| `dataformSqlxFormatter.keywordCase` | `preserve` | `upper` / `lower` to change the case of SQL keywords. See below. |
+| `dataformSqlxFormatter.keywordCase` | `preserve` | `upper` / `lower` to change the case of SQL keywords (CLI 2.x only). `preserve` matches `dataform format`. |
+| `dataformSqlxFormatter.dataformPath` | `dataform` | Path to the Dataform CLI. Set an absolute path if `dataform` is not on your `PATH`. |
+| `dataformSqlxFormatter.timeoutMs` | `30000` | Timeout for one format run, in milliseconds. |
 
-The SQL dialect is taken from `warehouse` in the nearest `dataform.json` (default `bigquery`).
+The SQL dialect is read from `warehouse` in the nearest `dataform.json` (default: `bigquery`).
 
-### Keyword case (CLI 2.x)
+## FAQ
 
-CLI 2.x leaves SQL keywords as written. With `keywordCase` set to `upper` or `lower`, the extension tells the CLI's SQL formatter to change their case. Because CLI 2.x never changes keyword case, the result stays unchanged by a stock `dataform format` run. CLI 3.x always uppercases keywords, so this setting has no effect there.
+**Which Dataform CLI versions are supported?**
+2.x and 3.x. Tested with 2.9.0 and 3.0.71. The extension always uses the CLI you have installed, so the result matches what `dataform format` gives you on your machine.
 
-## Safety check
+**Why don't keywords become uppercase?**
+CLI 2.x keeps keywords as you wrote them. Set `dataformSqlxFormatter.keywordCase` to `upper`. CLI 3.x always uppercases keywords, so the setting has no effect there.
 
-CLI 2.x reports success even on a file with syntax errors, and may corrupt it (for example, splitting `${` into `$ {`). The extension rejects a result if any non-whitespace character was added or removed, or if the number of `${` changed. In that case the file is left unchanged and a warning is shown. Details are in the **Dataform SQLX Formatter** output channel.
+**Will uppercasing keywords conflict with my `dataform format` pre-commit hook?**
+No. CLI 2.x never changes keyword case, so the uppercased result passes through `dataform format` unchanged.
+
+**Formatting did nothing and a warning appeared.**
+Either the CLI could not format the file (it can't format some complex files), or the file has a syntax error and the result would have corrupted it. The details are in the **Dataform SQLX Formatter** output channel (View → Output).
+
+**"Could not run dataform"**
+The CLI was not found. Install it with `npm i -g @dataform/cli`, or set `dataformSqlxFormatter.dataformPath` to its absolute path.
 
 ## Development
 
@@ -48,6 +93,8 @@ npm run package          # builds dataform-sqlx-formatter-<version>.vsix
 node test/verify-against-cli.js <project>                        # compare with the CLI output
 node test/verify-against-cli.js <project> --keyword-case=upper   # check stability under the stock CLI
 ```
+
+Issues and pull requests are welcome at [GitHub](https://github.com/happy-engine1/dataform-sqlx-formatter).
 
 ## License
 
